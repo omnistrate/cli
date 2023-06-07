@@ -1,0 +1,2 @@
+# cli
+Omnistrate Platform CLI
