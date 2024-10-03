@@ -97,6 +97,7 @@ if [ "$OMNISTRATE_INSTALL_ROOT" = "" ]; then
     OMNISTRATE_INSTALL_ROOT="${HOME}/.omnistrate"
 fi
 OMNISTRATE_CTL="${OMNISTRATE_INSTALL_ROOT}/bin/omnistrate-ctl"
+OMCTL_SYMLINK="${OMNISTRATE_INSTALL_ROOT}/bin/omctl"
 
 if [ -d "${OMNISTRATE_CTL}" ]; then
     say_red "error: ${OMNISTRATE_CTL} already exists and is a directory, refusing to proceed."
@@ -119,6 +120,14 @@ fi
 
 chmod +x "${OMNISTRATE_CTL}"
 say_green "Omnistrate CTL downloaded to ${OMNISTRATE_CTL}"
+
+# Create symlink for omctl
+if [ ! -f "${OMCTL_SYMLINK}" ]; then
+    ln -s "${OMNISTRATE_CTL}" "${OMCTL_SYMLINK}"
+    say_green "Symlink created: omctl -> ${OMNISTRATE_CTL}"
+else
+    say_yellow "Symlink omctl already exists."
+fi
 
 # Now that we have installed Omnistrate, if it is not already on the path, let's add a line to the
 # user's profile to add the folder to the PATH for future sessions.
