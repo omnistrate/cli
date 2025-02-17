@@ -51,42 +51,50 @@ NO_EDIT_PATH=""
 SILENT=""
 while [ $# -gt 0 ]; do
     case "$1" in
-        --silent)
-            SILENT="--silent"
-            ;;
-        --install-root)
-            INSTALL_ROOT=$2
-            ;;
-        --no-edit-path)
-            NO_EDIT_PATH="true"
-            ;;
-     esac
-     shift
+    --silent)
+        SILENT="--silent"
+        ;;
+    --install-root)
+        INSTALL_ROOT=$2
+        ;;
+    --no-edit-path)
+        NO_EDIT_PATH="true"
+        ;;
+    --version)
+        VERSION=$2
+        ;;
+    esac
+    shift
 done
 
 OS=""
 case $(uname) in
-    "Linux"*) OS="linux";;
-    "Darwin"*) OS="darwin";;
-    "MINGW"*) OS="windows";;
-    "MSYS"*) OS="windows";;
-    *)
-        print_unsupported_platform
-        exit 1
-        ;;
+"Linux"*) OS="linux" ;;
+"Darwin"*) OS="darwin" ;;
+"MINGW"*) OS="windows" ;;
+"MSYS"*) OS="windows" ;;
+*)
+    print_unsupported_platform
+    exit 1
+    ;;
 esac
 
 ARCH=""
 case $(uname -m) in
-    x86_64|amd64) ARCH="amd64";;
-    arm64|aarch64) ARCH="arm64";;
-    *)
-        print_unsupported_platform
-        exit 1
-        ;;
+x86_64 | amd64) ARCH="amd64" ;;
+arm64 | aarch64) ARCH="arm64" ;;
+*)
+    print_unsupported_platform
+    exit 1
+    ;;
 esac
 
-BASE_URL="https://github.com/omnistrate/cli/releases/latest/download/omnistrate-ctl-${OS}-${ARCH}"
+if [ -z "${VERSION}" ]; then
+    BASE_URL="https://github.com/omnistrate/cli/releases/latest/download/omnistrate-ctl-${OS}-${ARCH}"
+else
+    BASE_URL="https://github.com/omnistrate/cli/releases/download/${VERSION}/omnistrate-ctl-${OS}-${ARCH}"
+fi
+
 if [ "$OS" = "windows" ]; then
     BASE_URL="${BASE_URL}.exe"
 fi
@@ -137,36 +145,36 @@ if [ "${NO_EDIT_PATH}" != "true" ]; then
     PROFILE_FILE=""
 
     case "${SHELL_NAME}" in
-        "bash")
-            # Terminal.app on macOS prefers .bash_profile to .bashrc, so we prefer that
-            # file when trying to put our export into a profile. On *NIX, .bashrc is
-            # preferred as it is sourced for new interactive shells.
-            if [ "$(uname)" != "Darwin" ]; then
-                if [ -e "${HOME}/.bashrc" ]; then
-                    PROFILE_FILE="${HOME}/.bashrc"
-                elif [ -e "${HOME}/.bash_profile" ]; then
-                    PROFILE_FILE="${HOME}/.bash_profile"
-                fi
-            else
-                if [ -e "${HOME}/.bash_profile" ]; then
-                    PROFILE_FILE="${HOME}/.bash_profile"
-                elif [ -e "${HOME}/.bashrc" ]; then
-                    PROFILE_FILE="${HOME}/.bashrc"
-                fi
+    "bash")
+        # Terminal.app on macOS prefers .bash_profile to .bashrc, so we prefer that
+        # file when trying to put our export into a profile. On *NIX, .bashrc is
+        # preferred as it is sourced for new interactive shells.
+        if [ "$(uname)" != "Darwin" ]; then
+            if [ -e "${HOME}/.bashrc" ]; then
+                PROFILE_FILE="${HOME}/.bashrc"
+            elif [ -e "${HOME}/.bash_profile" ]; then
+                PROFILE_FILE="${HOME}/.bash_profile"
             fi
-            ;;
-        "zsh")
-            if [ -e "${ZDOTDIR:-$HOME}/.zshrc" ]; then
-                PROFILE_FILE="${ZDOTDIR:-$HOME}/.zshrc"
+        else
+            if [ -e "${HOME}/.bash_profile" ]; then
+                PROFILE_FILE="${HOME}/.bash_profile"
+            elif [ -e "${HOME}/.bashrc" ]; then
+                PROFILE_FILE="${HOME}/.bashrc"
             fi
-            ;;
+        fi
+        ;;
+    "zsh")
+        if [ -e "${ZDOTDIR:-$HOME}/.zshrc" ]; then
+            PROFILE_FILE="${ZDOTDIR:-$HOME}/.zshrc"
+        fi
+        ;;
     esac
 
     if [ -n "${PROFILE_FILE}" ]; then
         LINE_TO_ADD="export PATH=\$PATH:${OMNISTRATE_INSTALL_ROOT}/bin"
         if ! grep -q "# add Omnistrate CTL to the PATH" "${PROFILE_FILE}"; then
             say_white "+ Adding ${OMNISTRATE_INSTALL_ROOT}/bin to \$PATH in ${PROFILE_FILE}"
-            printf "\\n# add Omnistrate CTL to the PATH\\n%s\\n" "${LINE_TO_ADD}" >> "${PROFILE_FILE}"
+            printf "\\n# add Omnistrate CTL to the PATH\\n%s\\n" "${LINE_TO_ADD}" >>"${PROFILE_FILE}"
         fi
 
         EXTRA_INSTALL_STEP="+ Please restart your shell or add ${OMNISTRATE_INSTALL_ROOT}/bin to your \$PATH"
