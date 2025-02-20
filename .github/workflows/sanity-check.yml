@@ -29,15 +29,15 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-
+        
       - name: Run the install script
         id: install_linux
         timeout-minutes: 1
         if: matrix.os != 'windows-latest'
         run: |
-          ./install-ctl.sh
+          ./install-ctl.sh --install-root
           PATH="/root/.omnistrate/bin:${PATH}"
-          ctl_version=$(omctl --version)
+          ctl_version=$(omnistrate-ctl --version)
           echo "Omnistrate CTL version: $ctl_version"
           echo "ctl_version=$ctl_version" >> "$GITHUB_OUTPUT"
 
