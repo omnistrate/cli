@@ -35,8 +35,8 @@ jobs:
         timeout-minutes: 1
         if: matrix.os != 'windows-latest'
         run: |
-          ./install-ctl.sh --install-root
-          PATH="/root/.omnistrate/bin:${PATH}"
+          ./install-ctl.sh 
+          PATH="/home/runner/.omnistrate/bin:${PATH}"
           ctl_version=$(omnistrate-ctl --version)
           echo "Omnistrate CTL version: $ctl_version"
           echo "ctl_version=$ctl_version" >> "$GITHUB_OUTPUT"
