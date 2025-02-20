@@ -47,7 +47,7 @@ jobs:
         timeout-minutes: 1
         if: matrix.os == 'windows-latest'
         run: |
-          ./install-ctl.sh
+          bash ./install-ctl.sh
           dir "$env:USERPROFILE\.omnistrate\bin"
           $ctl_version = & "$env:USERPROFILE\omnistrate-ctl.exe" --version
           Write-Host "Omnistrate CTL version: $ctl_version"
