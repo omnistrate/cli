@@ -48,7 +48,7 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: |
           ./install-ctl.sh
-          ls -la $HOME
-          $ctl_version=${HOME}\omnistrate-ctl.exe --version
-          echo "Omnistrate CTL version: $ctl_version"
-          echo "ctl_version=$ctl_version" >> $env:GITHUB_OUTPUT
+          Get-ChildItem $env:USERPROFILE -Force
+          $ctl_version = & "$env:USERPROFILE\omnistrate-ctl.exe" --version
+          Write-Host "Omnistrate CTL version: $ctl_version"
+          "ctl_version=$ctl_version" >> $env:GITHUB_OUTPUT
