@@ -90,9 +90,9 @@ arm64 | aarch64) ARCH="arm64" ;;
 esac
 
 if [ -z "${VERSION}" ]; then
-    BASE_URL="https://github.com/omnistrate/cli/releases/latest/download/omnistrate-ctl-${OS}-${ARCH}"
+    BASE_URL="https://github.com/omnistrate-oss/omnistrate-ctl/releases/latest/download/omnistrate-ctl-${OS}-${ARCH}"
 else
-    BASE_URL="https://github.com/omnistrate/cli/releases/download/${VERSION}/omnistrate-ctl-${OS}-${ARCH}"
+    BASE_URL="https://github.com/omnistrate-oss/omnistrate-ctl/releases/download/${VERSION}/omnistrate-ctl-${OS}-${ARCH}"
 fi
 
 if [ "$OS" = "windows" ]; then
@@ -119,27 +119,57 @@ fi
 mkdir -p "${OMNISTRATE_INSTALL_ROOT}/bin"
 
 say_blue "=== Downloading Omnistrate CTL for ${OS}-${ARCH} ==="
-curl -L -o "${OMNISTRATE_CTL}" ${BASE_URL}
 
+# Try compressed version first
 if [ "$OS" = "windows" ]; then
-    mv "${OMNISTRATE_CTL}" "${OMNISTRATE_INSTALL_ROOT}/bin/omnistrate-ctl.exe"
-    OMNISTRATE_CTL="${OMNISTRATE_INSTALL_ROOT}/bin/omnistrate-ctl.exe"
+    COMPRESSED_URL="${BASE_URL}.zip"
+    TEMP_FILE="${OMNISTRATE_CTL}.exe"
+    
+    if curl -L --fail -o "${TEMP_FILE}.zip" "${COMPRESSED_URL}" 2>/dev/null; then
+        say_blue "Downloaded compressed version, extracting..."
+        unzip -q "${TEMP_FILE}.zip" -d "${OMNISTRATE_INSTALL_ROOT}/bin/"
+        rm "${TEMP_FILE}.zip"
+        mv "${OMNISTRATE_INSTALL_ROOT}/bin/omnistrate-ctl-${OS}-${ARCH}.exe" "${OMNISTRATE_INSTALL_ROOT}/bin/omnistrate-ctl.exe"
+        OMNISTRATE_CTL="${OMNISTRATE_INSTALL_ROOT}/bin/omnistrate-ctl.exe"
+    else
+        say_yellow "Compressed version not available, downloading uncompressed version..."
+        curl -L -o "${TEMP_FILE}" ${BASE_URL}
+        mv "${TEMP_FILE}" "${OMNISTRATE_INSTALL_ROOT}/bin/omnistrate-ctl.exe"
+        OMNISTRATE_CTL="${OMNISTRATE_INSTALL_ROOT}/bin/omnistrate-ctl.exe"
+    fi
+else
+    COMPRESSED_URL="${BASE_URL}.tar.gz"
+    
+    if curl -L --fail -o "${OMNISTRATE_CTL}.tar.gz" "${COMPRESSED_URL}" 2>/dev/null; then
+        say_blue "Downloaded compressed version, extracting..."
+        tar -xzf "${OMNISTRATE_CTL}.tar.gz" -C "${OMNISTRATE_INSTALL_ROOT}/bin/" --strip-components=0
+        rm "${OMNISTRATE_CTL}.tar.gz"
+        mv "${OMNISTRATE_INSTALL_ROOT}/bin/omnistrate-ctl-${OS}-${ARCH}" "${OMNISTRATE_CTL}"
+    else
+        say_yellow "Compressed version not available, downloading uncompressed version..."
+        curl -L -o "${OMNISTRATE_CTL}" ${BASE_URL}
+    fi
 fi
 
-chmod +x "${OMNISTRATE_CTL}"
+# If the file is not executable, we need to make it executable
+if [ "$OS" != "windows" ]; then
+    chmod +x "${OMNISTRATE_CTL}"
+fi
 say_green "Omnistrate CTL downloaded to ${OMNISTRATE_CTL}"
 
-# Create symlink for omctl
-if [ ! -f "${OMCTL_SYMLINK}" ]; then
-    ln -s "${OMNISTRATE_CTL}" "${OMCTL_SYMLINK}"
-    say_green "Symlink created: omctl -> ${OMNISTRATE_CTL}"
-else
-    say_yellow "Symlink omctl already exists."
+# Create symlink for omctl (not on Windows)
+if [ "$OS" != "windows" ]; then
+    if [ ! -f "${OMCTL_SYMLINK}" ]; then
+        ln -s "${OMNISTRATE_CTL}" "${OMCTL_SYMLINK}"
+        say_green "Symlink created: omctl -> ${OMNISTRATE_CTL}"
+    else
+        say_yellow "Symlink omctl already exists."
+    fi
 fi
 
 # Now that we have installed Omnistrate, if it is not already on the path, let's add a line to the
 # user's profile to add the folder to the PATH for future sessions.
-if [ "${NO_EDIT_PATH}" != "true" ]; then
+if [ "${NO_EDIT_PATH}" != "true" ] && [ "$OS" != "windows" ]; then
     # If we can, we'll add a line to the user's .profile adding ${OMNISTRATE_INSTALL_ROOT}/bin to the PATH
     SHELL_NAME=$(basename "${SHELL}")
     PROFILE_FILE=""
